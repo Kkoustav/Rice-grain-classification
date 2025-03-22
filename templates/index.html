@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rice Classification App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .upload-container {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            background-color: #fff;
+            transition: all 0.3s ease;
+        }
+        .upload-container:hover {
+            border-color: #6c757d;
+            background-color: #f8f9fa;
+        }
+        .result-container {
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #fff;
+            margin-top: 20px;
+        }
+        .confidence-bar {
+            height: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            background-color: #e9ecef;
+        }
+        .confidence-level {
+            height: 100%;
+            border-radius: 5px;
+            background-color: #28a745;
+        }
+        .placeholder-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            opacity: 0.7;
+        }
+        #file-input {
+            display: none;
+        }
+        .rice-info {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .header {
+            background-color: #4a6741;
+            color: white;
+            padding: 20px 0;
+            border-radius: 0 0 15px 15px;
+            margin-bottom: 30px;
+        }
+        .uploaded-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1 class="text-center">Rice Grain Classification</h1>
+            <p class="text-center mb-0">Upload an image to identify the rice variety</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <!-- Form with hidden file input and visible div for better UX -->
+                        <form action="/" method="post" enctype="multipart/form-data" id="upload-form">
+                            <input type="file" name="image" id="file-input" accept=".jpg, .jpeg, .png" required>
+                            <div class="upload-container" id="upload-area">
+                                <img src="https://cdn-icons-png.flaticon.com/512/32/32329.png" width="70" class="mb-3">
+                                <h5>Drag & Drop your rice image here</h5>
+                                <p class="text-muted">or click to browse files</p>
+                                <p class="text-muted small">(JPG, JPEG or PNG formats only)</p>
+                            </div>
+                            <div class="text-center mt-3">
+                                <button type="submit" class="btn btn-success px-4" id="predict-btn" disabled>
+                                    Predict Rice Variety
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- File name display -->
+                        <div id="file-name" class="text-center mt-2"></div>
+                        
+                        <!-- Error display -->
+                        {% if error %}
+                        <div class="alert alert-danger mt-3">{{ error }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Display prediction and the uploaded image if available -->
+                {% if prediction %}
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <!-- Here's the fixed image display -->
+                                {% if filename %}
+                                <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="Uploaded Rice Image" class="uploaded-image">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-7">
+                                <h3 class="mb-3">Results</h3>
+                                <p class="fs-5">Predicted Rice Variety: <span class="fw-bold text-success">{{ prediction }}</span></p>
+                                
+                                {% if confidence %}
+                                <p>Confidence Level: {{ confidence|round(2) }}%</p>
+                                <div class="confidence-bar">
+                                    <div class="confidence-level" id="confidence-bar"></div>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="rice-info">
+                                    <h5>About {{ prediction }} Rice</h5>
+                                    {% if prediction == 'Arborio' %}
+                                    <p>Arborio rice is a short-grain rice known for its high starch content, making it perfect for creamy dishes like risotto.</p>
+                                    {% elif prediction == 'Basmati' %}
+                                    <p>Basmati is a long-grain rice with a distinctive aroma and flavor, commonly used in Indian and Middle Eastern cuisine.</p>
+                                    {% elif prediction == 'Ipsala' %}
+                                    <p>Ipsala rice is a medium-grain variety from Turkey known for its subtle flavor and versatility in cooking.</p>
+                                    {% elif prediction == 'Jasmine' %}
+                                    <p>Jasmine rice is fragrant long-grain rice commonly used in Southeast Asian cuisine, with a slightly sticky texture when cooked.</p>
+                                    {% elif prediction == 'Karacadag' %}
+                                    <p>Karacadag is a traditional Turkish rice variety known for its robust flavor and ability to absorb flavors in pilaf dishes.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 py-3 text-center text-muted">
+        <div class="container">
+            <p>Rice Classifier AI Model &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript to enhance the file upload experience
+        const fileInput = document.getElementById('file-input');
+        const uploadArea = document.getElementById('upload-area');
+        const fileNameDisplay = document.getElementById('file-name');
+        const predictBtn = document.getElementById('predict-btn');
+        
+        // Trigger the hidden file input when clicking on the upload area
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // Handle drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#28a745';
+            uploadArea.style.backgroundColor = '#f0fff0';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#dee2e6';
+            uploadArea.style.backgroundColor = '#fff';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#dee2e6';
+            uploadArea.style.backgroundColor = '#fff';
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileName();
+            }
+        });
+        
+        // Display the name of the selected file
+        fileInput.addEventListener('change', updateFileName);
+        
+        function updateFileName() {
+            // Set the confidence bar width dynamically
+            const confidenceBar = document.getElementById('confidence-bar');
+            if (confidenceBar) {
+                confidenceBar.style.width = '{{ confidence }}%';
+            }
+            if (fileInput.files.length) {
+                const fileName = fileInput.files[0].name;
+                fileNameDisplay.textContent = `Selected file: ${fileName}`;
+                predictBtn.disabled = false;
+                
+                // Change upload area appearance to show file is selected
+                uploadArea.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/1250/1250621.png" width="50" class="mb-3">
+                                       <h5>File selected</h5>
+                                       <p>Click here to choose a different file</p>`;
+            } else {
+                fileNameDisplay.textContent = '';
+                predictBtn.disabled = true;
+            }
+        }
+    </script>
+</body>
+</html>
